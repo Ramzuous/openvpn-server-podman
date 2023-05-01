@@ -1,0 +1,27 @@
+- hosts: vpn-server-podman
+  gather_facts: false
+  vars_files:
+    - vars_files/var_file_strings.yml
+  tasks:
+    - include_role:
+        name: file
+      vars:  
+        path: "{{ vpn_server_revoke_path }}"
+        state: absent
+        mode: '0755'
+    - include_role:
+        name: expect
+        tasks_from: expect_revoke
+      vars:
+        command: podman run -v {{ vpn_server_container_name }}:/etc/openvpn --rm -it {{ vpn_server_image }} ovpn_revokeclient {{ item }}
+        response: 'yes'
+      with_items:
+        - "{{ ovpn_clients_to_remove }}"
+    - include_role:
+        name: file
+      vars:  
+        path: /home/{{ item }}
+        state: absent
+        mode: '0755'
+      with_items:
+        - "{{ ovpn_clients_to_remove }}"

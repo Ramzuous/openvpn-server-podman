@@ -1,0 +1,17 @@
+---
+- name: Create client folder
+  file:
+    path: /home/{{ item.item.ovpn_client_name }}
+    state: directory
+    mode: '755'
+  with_items: 
+    - "{{ resultFolder.results }}"
+  when: item.stat.exists == False
+- name: Create client.conf
+  file:
+    path: /home/{{ item.item.ovpn_client_name }}/1-{{ item.item.ovpn_client_name }}.conf
+    state: touch
+    mode: '755'
+  with_items: 
+    - "{{ resultFile.results }}"
+  when: item.stat.exists == False

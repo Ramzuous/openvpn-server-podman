@@ -1,0 +1,16 @@
+---
+- name: Check {{ path }} stat
+  stat:
+    path: "{{ path }}"
+  with_items:
+    - "{{ vars_to_check }}"
+  register: result
+- name: expect {{ command }}
+  expect:
+    command: "{{ command }}"
+    responses:
+      'Enter PEM pass phrase': '{{ responses1 }}'
+      'Verifying - Enter PEM pass phrase': '{{ responses2 }}'
+  with_items:
+    - "{{ result.results }}"
+  when: item.stat.exists == False

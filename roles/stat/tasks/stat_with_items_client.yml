@@ -1,0 +1,19 @@
+---   
+- name: Check if req exists
+  stat:
+    path: /var/lib/containers/storage/volumes/ovpn-data/_data/pki/reqs/{{ item.ovpn_client_name }}.req
+  with_items:
+    - "{{ ovpn_clients_vars }}"
+  register: result
+- name: Check if client folder exists
+  stat:
+    path: /home/{{ item.ovpn_client_name }}
+  with_items:
+    - "{{ ovpn_clients_vars }}"
+  register: resultFolder
+- name: Check if client folder exists
+  stat:
+    path: /home/{{ item.ovpn_client_name }}/1-{{ item.ovpn_client_name }}.conf
+  with_items:
+    - "{{ ovpn_clients_vars }}"
+  register: resultFile

@@ -1,0 +1,34 @@
+#ansible_python_interpreter: "/usr/bin/python3"
+#Static
+iptables_conf_path: /etc/modules-load.d/iptables.conf
+vpn_server_path: /etc/openvpn
+vpn_server_dev_path: /dev/net/tun
+vpn_server_system_path: /etc/systemd/system
+vpn_server_deamon_path: /etc/systemd/system/container-{{ vpn_server_name }}.service
+vpn_server_container_path: /var/lib/containers/storage/volumes/{{ vpn_server_container_name }}/_data
+vpn_server_config_path: /var/lib/containers/storage/volumes/{{ vpn_server_container_name }}/_data/openvpn.conf
+vpn_server_pki_path: /var/lib/containers/storage/volumes/{{ vpn_server_container_name }}/_data/pki
+vpn_server_create_pki_command: podman run --name {{ vpn_server_name }} -v {{ vpn_server_container_name }}:{{ vpn_server_path }} --rm -it {{ vpn_server_image }} ovpn_initpki nopass
+vpn_server_dh_src: /var/lib/containers/storage/volumes/{{ vpn_server_container_name }}/_data/pki/dh.pem
+vpn_server_ca_src: /var/lib/containers/storage/volumes/{{ vpn_server_container_name }}/_data/pki/ca.crt
+vpn_server_ta_src: /var/lib/containers/storage/volumes/{{ vpn_server_container_name }}/_data/pki/ta.key
+vpn_server_crt_src: /var/lib/containers/storage/volumes/{{ vpn_server_container_name }}/_data/pki/issued/{{ vpn_server_ip }}.crt
+vpn_server_key_src: /var/lib/containers/storage/volumes/{{ vpn_server_container_name }}/_data/pki/private/{{ vpn_server_ip }}.key
+vpn_server_client_req: /var/lib/containers/storage/volumes/{{ vpn_server_container_name }}/_data/pki/reqs/{{ item.ovpn_client_name }}.req
+vpn_server_create_create: podman run -v {{ vpn_server_container_name }}:/etc/openvpn --rm -it {{ vpn_server_image }} easyrsa build-client-full {{ item.item.ovpn_client_name }} pass
+vpn_server_client_ca_src: /var/lib/containers/storage/volumes/{{ vpn_server_container_name }}/_data/ca.crt
+vpn_server_client_ca_des: /home/{{ item.ovpn_client_name }}/2-ca.crt
+vpn_server_client_ta_src: /var/lib/containers/storage/volumes/{{ vpn_server_container_name }}/_data/ta.key
+vpn_server_client_ta_dest: /home/{{ item.ovpn_client_name }}/5-ta.key
+vpn_server_client_cert_src: /var/lib/containers/storage/volumes/{{ vpn_server_container_name }}/_data/pki/issued/{{ item.ovpn_client_name }}.crt
+vpn_server_client_cert_dest: /home/{{ item.ovpn_client_name }}/3-{{ item.ovpn_client_name }}.crt
+vpn_server_client_key_src: /var/lib/containers/storage/volumes/{{ vpn_server_container_name }}/_data/pki/private/{{ item.ovpn_client_name }}.key
+vpn_server_client_key_dest: /home/{{ item.ovpn_client_name }}/4-{{ item.ovpn_client_name }}.key
+vpn_server_client_folder: /home/{{ item.ovpn_client_name }}
+vpn_server_client_folder_item: /home/{{ item.item.ovpn_client_name }}
+vpn_server_client_cfg: /home/{{ item.ovpn_client_name }}/1-{{ item.ovpn_client_name }}.conf
+vpn_server_client_cfg_item: /home/{{ item.item.ovpn_client_name }}/1-{{ item.item.ovpn_client_name }}.conf
+vpn_server_client_ovpn_file: /home/{{ item.ovpn_client_name }}/{{ item.ovpn_client_name }}.ovpn
+vpn_server_client_ovpn_file_item: /home/{{ item.item.ovpn_client_name }}/{{ item.item.ovpn_client_name }}.ovpn
+vpn_server_revoke_path: /var/lib/containers/storage/volumes/{{ vpn_server_container_name }}/_data/pki/crl.pem
+#Edit

@@ -1,0 +1,17 @@
+---
+- name: podman container {{ name }} state {{ state }}
+  containers.podman.podman_container:
+    name: "{{ name }}"
+    image: "{{ image }}"
+    state: "{{ state }}"
+    device: "{{ device }}:{{ device }}"
+    detach: "{{ detach }}"
+    cap_add: "{{ cap_add }}"
+    volume:
+      - "{{ volume_outside }}:{{ volume_inside }}"
+    generate_systemd:
+      new: "{{ generate_systemd_new }}"
+      path: "{{ generate_systemd_path }}"
+      restart_policy: "{{ generate_systemd_restart_policy }}"
+    ports:
+      - "{{ port }}:{{ port }}/{{ proto }}"

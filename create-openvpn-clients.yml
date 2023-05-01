@@ -1,0 +1,168 @@
+- hosts: vpn-server-podman
+  gather_facts: false
+  vars_files:
+    - vars_files/var_file_strings.yml
+  tasks:
+    - include_role:
+        name: expect
+        tasks_from: expect_two_response
+      vars:
+        path: "{{ vpn_server_client_req }}"
+        vars_to_check: "{{ ovpn_clients_vars }}"
+        command: "{{ vpn_server_create_create }}"
+        responses1: "{{ item.item.ovpn_client_pass }}"
+        responses2: "{{ item.item.ovpn_client_pass }}"
+    - include_role:
+        name: file
+      vars:
+        path: "{{ vpn_server_client_folder }}"
+        state: directory
+        mode: '755'
+      with_items:
+        - "{{ ovpn_clients_vars }}"
+    - include_role:
+        name: blockinfile
+      vars:
+        path: "{{ vpn_server_client_cfg }}"
+        path_block: "{{ vpn_server_client_cfg_item }}"
+        create : yes
+        mode: '755'
+        block: |
+          client
+          dev {{ vpn_server_dev }}
+          proto {{ vpn_server_proto }}
+          remote {{ vpn_server_ip }} {{ vpn_server_port }}
+          resolv-retry infinite
+          nobind
+          user {{ vpn_server_user }}
+          group {{ vpn_server_group }}
+          persist-key
+          persist-tun
+          ca ca.crt
+          cert {{ item.item.ovpn_client_name }}.crt
+          key {{ item.item.ovpn_client_name }}.key
+          remote-cert-tls server
+          tls-auth ta.key 1
+          cipher {{ vpn_server_cipher }}
+          verb {{ vpn_server_verb }}
+        items_to_check: "{{ ovpn_clients_vars }}"
+    - include_role:
+        name: lineinfile
+        tasks_from: lineinfile_regexp
+      vars:
+        path: "{{ vpn_server_client_cfg }}"
+        regexp: '#'
+        state: absent
+      with_items: 
+        - "{{ ovpn_clients_vars }}"
+    - include_role:
+        name: copy
+      vars:
+        src: "{{ vpn_server_client_ca_src }}"
+        dest: "{{ vpn_server_client_ca_des }}"
+        remote_src: yes
+      with_items: 
+        - "{{ ovpn_clients_vars }}"
+    - include_role:
+        name: copy
+      vars:
+        src: "{{ vpn_server_client_ta_src }}"
+        dest: "{{ vpn_server_client_ta_dest }}"
+        remote_src: yes
+      with_items: 
+        - "{{ ovpn_clients_vars }}"
+    - include_role:
+        name: copy
+      vars:
+        src: "{{ vpn_server_client_cert_src }}"
+        dest: "{{ vpn_server_client_cert_dest }}"
+        remote_src: yes
+      with_items: 
+        - "{{ ovpn_clients_vars }}"        
+    - include_role:
+        name: copy
+      vars:
+        src: "{{ vpn_server_client_key_src }}"
+        dest: "{{ vpn_server_client_key_dest }}"
+        remote_src: yes
+      with_items: 
+        - "{{ ovpn_clients_vars }}"          
+    - include_role:
+        name: assemble
+      vars:
+        path: "{{ vpn_server_client_ovpn_file }}"
+        items_to_check: "{{ ovpn_clients_vars }}"        
+        src: "{{ vpn_server_client_folder_item }}"
+        dest: "{{ vpn_server_client_ovpn_file_item }}"
+    - include_role:
+        name: lineinfile
+        tasks_from: lineinfile_insertafter
+      vars:
+        path: "{{ vpn_server_client_ovpn_file }}"
+        line: <ca>
+        insertafter: 'verb'
+      with_items:
+        - "{{ ovpn_clients_vars }}"
+    - include_role:
+        name: lineinfile
+        tasks_from: lineinfile_insertbefore
+      vars:        
+        path: "{{ vpn_server_client_ovpn_file }}"
+        line: </ca>
+        insertbefore: 'Certificate:'
+      with_items:
+        - "{{ ovpn_clients_vars }}"
+    - include_role:
+        name: lineinfile
+        tasks_from: lineinfile_insertbefore
+      vars:
+        path: "{{ vpn_server_client_ovpn_file }}"
+        line: <cert>
+        insertbefore: 'Certificate:'
+      with_items:
+       - "{{ ovpn_clients_vars }}"      
+    - include_role:
+        name: lineinfile
+        tasks_from: lineinfile_insertbefore
+      vars:
+        path: /home/{{ item.ovpn_client_name}}/{{ item.ovpn_client_name }}.ovpn
+        line: </cert>
+        insertbefore: '-----BEGIN ENCRYPTED PRIVATE KEY-----'
+      with_items:
+        - "{{ ovpn_clients_vars }}" 
+    - include_role:
+        name: lineinfile
+        tasks_from: lineinfile_insertbefore
+      vars:   
+        path: /home/{{ item.ovpn_client_name}}/{{ item.ovpn_client_name }}.ovpn
+        line: <key>
+        insertbefore: '-----BEGIN ENCRYPTED PRIVATE KEY-----'
+      with_items:
+        - "{{ ovpn_clients_vars }}"
+    - include_role:
+        name: lineinfile
+        tasks_from: lineinfile_insertafter
+      vars:        
+        path: /home/{{ item.ovpn_client_name}}/{{ item.ovpn_client_name }}.ovpn
+        line: </key>
+        insertafter: '-----END ENCRYPTED PRIVATE KEY-----'
+      with_items:
+        - "{{ ovpn_clients_vars }}"
+    - include_role:
+        name: lineinfile
+        tasks_from: lineinfile_insertafter
+      vars:        
+        path: /home/{{ item.ovpn_client_name}}/{{ item.ovpn_client_name }}.ovpn
+        line: <tls-auth>
+        insertafter: '</key>'
+      with_items:
+        - "{{ ovpn_clients_vars }}"
+    - include_role:
+        name: lineinfile
+        tasks_from: lineinfile_insertafter        
+      vars:
+        path: /home/{{ item.ovpn_client_name}}/{{ item.ovpn_client_name }}.ovpn
+        line: </tls-auth>
+        insertafter: '-----END OpenVPN Static key V1-----'
+      with_items:
+        - "{{ ovpn_clients_vars }}"

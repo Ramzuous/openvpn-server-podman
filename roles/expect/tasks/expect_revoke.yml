@@ -1,0 +1,7 @@
+---
+- name: Run {{ command }} with response {{ response }}
+  expect:
+    command: "{{ command }}"
+    responses:
+      'Continue with revocation': '{{ response }}'
+    timeout: 300

@@ -1,0 +1,6 @@
+---
+- name: podman container {{ name }} state {{ state }}
+  containers.podman.podman_volume:
+    state: "{{ state }}"
+    name: "{{ name }}"
+    recreate: "{{ recreate }}"

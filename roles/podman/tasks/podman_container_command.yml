@@ -1,0 +1,9 @@
+---
+- name: podman container {{ name }} rm {{ rm }} command {{ command }}
+  containers.podman.podman_container:
+    name: "{{ name }}"
+    image: "{{ image }}"
+    rm: "{{ rm }}"
+    volume:
+      - "{{ volume_outside }}:{{ volume_inside }}"
+    command: "{{ command }}"

@@ -1,0 +1,64 @@
+- hosts: vpn-server-podman
+  gather_facts: false
+  vars_files:
+    - vars_files/var_file_strings.yml
+  tasks:
+    - include_role:
+        name: systemd
+      vars:
+        name: container-{{ vpn_server_name }}.service
+        state: stopped
+        enabled: no
+        daemon_reload: yes
+    - include_role:
+        name: podman
+        tasks_from: podman_volume
+      vars:
+        state: absent
+        name: "{{ vpn_server_container_name }}"
+        recreate: no
+    - include_role:
+        name: podman
+        tasks_from: podman_image
+      vars:
+        name: "{{ vpn_server_image }}"
+        state: absent
+    - include_role:
+        name: file
+      vars:
+        path: "{{ item }}"
+        state: absent
+        mode: '0755'
+      with_items:
+        - "{{ vpn_server_deamon_path }}"
+        - "{{ iptables_conf_path }}"
+    - include_role:
+        name: file
+      vars:  
+        path: /home/{{ item.ovpn_client_name }}
+        state: absent
+        mode: '0755'
+      with_items:
+        - "{{ ovpn_clients_vars }}"
+    - include_role:
+        name: modprobe
+      vars:
+        name: ip_tables
+        state: absent
+    - include_role:
+        name: pip
+      vars:
+        name: pexpect
+        state: absent
+    - include_role:
+        name: dnf
+      vars:
+        name: "{{ item }}"
+        state: absent
+      with_items:
+        - python3
+        - python3-pip
+        - crun
+        - runc
+        - iptables
+        - podman

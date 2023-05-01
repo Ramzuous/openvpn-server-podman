@@ -1,0 +1,29 @@
+---
+- name: Copy ca.crt to client folder
+  copy:
+    src: /var/lib/containers/storage/volumes/ovpn-data/_data/ca.crt
+    dest: /home/{{ item.ovpn_client_name }}/2-ca.crt
+    remote_src: yes
+  with_items: 
+    - "{{ ovpn_clients_vars }}"
+- name: Copy ta.key to client folder
+  copy:
+    src: /var/lib/containers/storage/volumes/ovpn-data/_data/ta.key
+    dest: /home/{{ item.ovpn_client_name }}/5-ta.key
+    remote_src: yes
+  with_items: 
+    - "{{ ovpn_clients_vars }}"
+- name: Copy client.crt to client folder
+  copy:
+    src: /var/lib/containers/storage/volumes/ovpn-data/_data/pki/issued/{{ item.ovpn_client_name }}.crt
+    dest: /home/{{ item.ovpn_client_name }}/3-{{ item.ovpn_client_name }}.crt
+    remote_src: yes
+  with_items: 
+    - "{{ ovpn_clients_vars }}"
+- name: Copy client.key to client folder
+  copy:
+    src: /var/lib/containers/storage/volumes/ovpn-data/_data/pki/private/{{ item.ovpn_client_name }}.key
+    dest: /home/{{ item.ovpn_client_name }}/4-{{ item.ovpn_client_name }}.key
+    remote_src: yes
+  with_items: 
+    - "{{ ovpn_clients_vars }}"

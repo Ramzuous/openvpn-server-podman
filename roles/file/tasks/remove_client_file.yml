@@ -1,0 +1,8 @@
+---
+- name: remove ovpn file
+  file:
+    path: "/home/{{ item.item.ovpn_client_name }}/1-{{ item.item.ovpn_client_name }}.ovpn"
+    state: absent
+  with_items:
+    - "{{ resultFile.results }}"
+  when: item.stat.exists == True

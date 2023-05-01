@@ -1,0 +1,5 @@
+---
+- name: modprobe {{ name }} state {{ state }}
+  modprobe:
+    name: "{{ name }}"
+    state: "{{ state }}"

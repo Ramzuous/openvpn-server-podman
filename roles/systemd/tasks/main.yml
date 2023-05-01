@@ -1,0 +1,7 @@
+---
+- name: State {{ state }} systemd {{ name }} enabled {{ enabled }} daemon-reload {{ daemon_reload }}
+  systemd:
+    name: "{{ name }}"
+    state: "{{ state }}"
+    enabled: "{{ enabled }} "
+    daemon-reload: "{{ daemon_reload }}"

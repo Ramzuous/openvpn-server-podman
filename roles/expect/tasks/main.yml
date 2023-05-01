@@ -1,0 +1,7 @@
+---
+- name: expect {{ command }} with respons {{ response }} timeout {{ timeout }}
+  expect:
+    command: "{{ command }}"
+    responses:
+      'Common Name': '{{ response }}'
+    timeout: "{{ timeout }}"

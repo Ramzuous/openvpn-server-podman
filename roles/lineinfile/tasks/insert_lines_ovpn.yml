@@ -1,0 +1,57 @@
+---
+- name: Create ovpn file - ca sign begin
+  lineinfile:
+    path: /home/{{ item.ovpn_client_name}}/{{ item.ovpn_client_name }}.ovpn
+    line: <ca>
+    insertafter: 'verb'
+  with_items:
+    - "{{ ovpn_clients_vars }}"
+- name: Create ovpn file - ca sign end
+  lineinfile:
+    path: /home/{{ item.ovpn_client_name}}/{{ item.ovpn_client_name }}.ovpn
+    line: </ca>
+    insertbefore: 'Certificate:'
+  with_items:
+    - "{{ ovpn_clients_vars }}"
+- name: Create ovpn file - cert sign begin
+  lineinfile:
+    path: /home/{{ item.ovpn_client_name}}/{{ item.ovpn_client_name }}.ovpn
+    line: <cert>
+    insertbefore: 'Certificate:'
+  with_items:
+    - "{{ ovpn_clients_vars }}"
+- name: Create ovpn file - cert sign end
+  lineinfile:
+    path: /home/{{ item.ovpn_client_name}}/{{ item.ovpn_client_name }}.ovpn
+    line: </cert>
+    insertbefore: '-----BEGIN ENCRYPTED PRIVATE KEY-----'
+  with_items:
+    - "{{ ovpn_clients_vars }}" 
+- name: Create ovpn file - key sign begin
+  lineinfile:
+    path: /home/{{ item.ovpn_client_name}}/{{ item.ovpn_client_name }}.ovpn
+    line: <key>
+    insertbefore: '-----BEGIN ENCRYPTED PRIVATE KEY-----'
+  with_items:
+    - "{{ ovpn_clients_vars }}"
+- name: Create ovpn file - key sign end
+  lineinfile:
+    path: /home/{{ item.ovpn_client_name}}/{{ item.ovpn_client_name }}.ovpn
+    line: </key>
+    insertafter: '-----END ENCRYPTED PRIVATE KEY-----'
+  with_items:
+    - "{{ ovpn_clients_vars }}"
+- name: Create ovpn file - tls-auth sign begin
+  lineinfile:
+    path: /home/{{ item.ovpn_client_name}}/{{ item.ovpn_client_name }}.ovpn
+    line: <tls-auth>
+    insertafter: '</key>'
+  with_items:
+    - "{{ ovpn_clients_vars }}"
+- name: Create ovpn file - tls-auth sign end
+  lineinfile:
+    path: /home/{{ item.ovpn_client_name}}/{{ item.ovpn_client_name }}.ovpn
+    line: </tls-auth>
+    insertafter: '-----END OpenVPN Static key V1-----'
+  with_items:
+    - "{{ ovpn_clients_vars }}"

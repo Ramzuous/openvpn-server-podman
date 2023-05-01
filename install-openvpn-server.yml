@@ -1,0 +1,165 @@
+- hosts: vpn-server-podman
+  gather_facts: false
+  vars_files:
+    - vars_files/var_file_strings.yml
+  tasks:
+    - include_role:
+        name: dnf
+      vars:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - "*"
+        - python3
+        - python3-pip
+        - crun
+        - runc
+        - iptables
+    - include_role:
+        name: dnf
+      vars:
+        name: podman
+        state: present
+    - include_role:
+        name: pip
+      vars:
+        name: pexpect
+        state: present
+    - include_role:
+        name: podman
+        tasks_from: podman_image
+      vars:
+        name: "{{ vpn_server_image }}"
+        state: present
+    - include_role:
+        name: podman
+        tasks_from: podman_volume
+      vars:
+        state: present
+        name: "{{ vpn_server_container_name }}"
+        recreate: no
+    - include_role:
+        name: modprobe
+      vars:
+        name: ip_tables
+        state: present
+    - include_role:
+        name: file
+      vars:
+        path: "{{ iptables_conf_path }}"
+        state: touch
+        mode: '0755'
+    - include_role:
+        name: lineinfile
+      vars:
+        path: "{{ iptables_conf_path }}"
+        line: ip_tables
+        state: present
+    - include_role:
+        name: systemd
+        tasks_from: systemd_enabled
+      vars:
+        name: systemd-modules-load
+        enabled: yes
+    - include_role:
+        name: podman
+        tasks_from: podman_container_command
+      vars:
+        name: "{{ vpn_server_name }}"
+        image: "{{ vpn_server_image }}"
+        rm: yes
+        volume_outside: "{{ vpn_server_container_name }}"
+        volume_inside: "{{ vpn_server_path }}"
+        command: ovpn_genconfig -u {{ vpn_server_proto }}://{{ vpn_server_ip }}:{{ vpn_server_port }}
+    - include_role:
+        name: stat
+      vars:
+        path: "{{ vpn_server_pki_path }}"
+    - include_role:
+        name: expect
+      when: not result.stat.exists 
+      vars:
+        command: "{{ vpn_server_create_pki_command }}"
+        response: "{{ vpn_server_name }}"
+        timeout: 300  
+    - include_role:
+        name: file
+      vars:
+        path: "{{ vpn_server_config_path }}"
+        state: "{{ item }}"
+        mode: '0755' 
+      with_items:
+        - absent
+        - touch
+    - include_role:
+        name: lineinfile
+      vars:
+        path: "{{ vpn_server_config_path }}"
+        line: "{{ item }}"
+        state: present
+      with_items:        
+        - port {{ vpn_server_port }}
+        - proto {{ vpn_server_proto }}
+        - dev {{ vpn_server_dev }}
+        - ca ca.crt
+        - cert {{ vpn_server_ip }}.crt
+        - key {{ vpn_server_ip }}.key
+        - dh dh.pem
+        - server {{ vpn_server_network }}       
+        - 'push "redirect-gateway def1 bypass-dhcp"'
+        - 'push "dhcp-option DNS {{ vpn_server_dns_1 }}"'    
+        - 'push "dhcp-option DNS {{ vpn_server_dns_2 }}"'       
+        - keepalive {{ vpn_server_keepalive }}
+        - tls-auth ta.key 0
+        - cipher {{ vpn_server_cipher }}     
+        - user {{ vpn_server_user }}         
+        - group {{ vpn_server_group }}  
+        - persist-key
+        - persist-tun
+        - status {{ vpn_server_status_path }}
+        - log {{ vpn_server_log_path }}
+        - log-append {{ vpn_server_log_append_path }}
+        - verb {{ vpn_server_verb }}
+        - explicit-exit-notify {{ vpn_server_exp_exit_not }}
+    - include_role:
+        name: copy
+      vars:
+        src: "{{ item }}"
+        dest: "{{ vpn_server_container_path }}"
+        remote_src: yes
+      with_items:
+        - "{{ vpn_server_dh_src }}"
+        - "{{ vpn_server_ca_src }}"     
+        - "{{ vpn_server_ta_src }}"
+        - "{{ vpn_server_crt_src }}"
+        - "{{ vpn_server_key_src }}"
+    - include_role:
+        name: podman
+      vars:
+        name: "{{ vpn_server_name }}"
+        image: "{{ vpn_server_image }}"
+        state: started
+        device: "{{ vpn_server_dev_path }}"
+        detach: yes
+        cap_add: NET_ADMIN
+        generate_systemd_new: yes
+        generate_systemd_path: "{{ vpn_server_system_path }}"
+        generate_systemd_restart_policy: always
+        port: "{{ vpn_server_port }}"
+        proto: "{{ vpn_server_proto }}"
+        volume_outside: "{{ vpn_server_container_name }}"
+        volume_inside: "{{ vpn_server_path }}"
+    - include_role:
+        name: lineinfile
+        tasks_from: lineinfile_insertafter
+      vars:
+        path: "{{ vpn_server_deamon_path }}"
+        insertafter: ExecStart
+        line: ExecStartPost=/usr/bin/podman exec -it {{ vpn_server_name }} iptables -t nat -A POSTROUTING -s {{ vpn_server_network_different_mask }} -o {{ vpn_server_dev_out }} -j MASQUERADE
+    - include_role:
+        name: systemd
+      vars:
+        name: container-{{ vpn_server_name }}.service
+        state: started
+        enabled: yes
+        daemon_reload: yes

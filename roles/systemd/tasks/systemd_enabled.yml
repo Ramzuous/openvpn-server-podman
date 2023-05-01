@@ -1,0 +1,5 @@
+---    
+- name: systemd {{ name }} enabled {{ enabled }}
+  systemd:
+    name: "{{ name }}"
+    enabled: "{{ enabled }}"

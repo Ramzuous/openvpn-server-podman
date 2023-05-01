@@ -1,0 +1,5 @@
+---   
+- name: Check {{ path }} stat
+  stat:
+    path: "{{ path }}"
+  register: result
